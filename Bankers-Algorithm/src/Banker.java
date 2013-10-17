@@ -25,7 +25,7 @@ public class Banker {
 	* @param nUnits
 	*/
 	public void setClaim(int nUnits){
-		if(claim != null || nUnits < 1 || nUnits > availUnits){
+		if(claim != null || nUnits <= 0 || nUnits > availUnits){
 			System.exit(1);
 		}
 
@@ -72,7 +72,7 @@ public class Banker {
 	}
 	
 	public void release(int nUnits){
-		if( claim != Thread.currentThread() || nUnits > 0 || nUnits > allocUnits){
+		if( claim != Thread.currentThread() || nUnits <= 0 || nUnits > allocUnits){
 			System.exit(1);
 		}
 		System.out.println("Thread "+Thread.currentThread().getName()+" releases "+nUnits+" units.");
