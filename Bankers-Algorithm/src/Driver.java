@@ -6,7 +6,7 @@ public class Driver {
 	private final static int NUM_CLIENTS = 5;
 	
 	// Number of units to give the banker
-	private final static int BANKER_UNITS = 5;
+	private final static int BANKER_UNITS = 18;
 	
 	// Number of units each clients will request
 	private final static int CLIENT_UNITS = 5;
