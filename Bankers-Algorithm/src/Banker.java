@@ -79,7 +79,7 @@ public class Banker {
 		for(Thread t: threadClaims.keySet()){
 			array.add(threadClaims.get(t));
 		}
-		
+		sort(array);
 		for(int i = 0; i < threadClaims.size() - 1; i++){
 			if (array.get(i)[1] > numberOfUnitsOnHand){
 				return false;
@@ -87,6 +87,25 @@ public class Banker {
 			numberOfUnitsOnHand += array.get(i)[0];
 		}
 		return true;
+	}
+	
+	/**
+	 * @param, array, array of pairs of remaining and allocated units
+	 * Sorts the array by increasing claim size
+	 * /
+	public void sort(ArrayList<int[]> array){
+		int temp[] = null;
+		
+		for(int i = 0; i < array.size(); i++){
+			for (int j = i + 1; j < array.size(); j++){
+				if (array.get(i)[0] > array.get(j)[0] ){
+					temp = array.get(i);
+					array.set(i, array.get(j));
+					array.set(j, temp);
+				}
+			}
+		}
+		
 	}
 	
 	public void release(int nUnits){
