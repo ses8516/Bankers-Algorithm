@@ -1,3 +1,7 @@
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * A non-threaded object
  * @author Steven
@@ -9,13 +13,14 @@ public class Banker {
 	private volatile int allocUnits;
 	private volatile int availUnits;
 	
-	private Thread claim = null; 
+	private Map<Thread,int[]> claims; 
 	
 	/**
 	* Main constructor for Banker class
 	* @param nUnits - # of units from the system the Banker wants to obtain initially
 	*/
 	public Banker(int nUnits){
+		claims = new HashMap<Thread,int[]>();
 		allocUnits = nUnits;
 		availUnits = nUnits;
 	}
@@ -25,11 +30,12 @@ public class Banker {
 	* @param nUnits
 	*/
 	public void setClaim(int nUnits){
-		if(claim != null || nUnits <= 0 || nUnits > availUnits){
+		if(claims.containsKey(Thread.currentThread()) || nUnits <= 0 || nUnits > availUnits){
 			System.exit(1);
 		}
 
-		claim = Thread.currentThread();
+		int[] allocRemain = {0,nUnits};
+		claims.put(Thread.currentThread(), allocRemain );
 		
 		System.out.println("Thread "+Thread.currentThread().getName()+" sets a claim for "+nUnits+" units.");
 	}
@@ -41,7 +47,7 @@ public class Banker {
 	public boolean request(int nUnits){
 		System.out.println("Thread "+Thread.currentThread().getName()+" requests "+nUnits+" units.");
 		
-		if (safe()){
+		if (safe(nUnits, claims)){
 			
 		}else{
 			while(true){
@@ -53,10 +59,9 @@ public class Banker {
 				}
 				System.out.println("Thread "+Thread.currentThread().getName()+" awakened.");
 				
-				if (safe()) {
+				if (safe(nUnits, claims)) {
 					System.out.println("Thread "+Thread.currentThread().getName()+" has "+nUnits+" units allocated.");
-					allocUnits += nUnits;
-					availUnits += nUnits;
+					availUnits -= nUnits;
 				}
 			}
 		}
@@ -67,16 +72,28 @@ public class Banker {
 	/**
 	 * Determine if state is safe
 	 */
-	private boolean safe(){
-		return false;
+	private boolean safe(int numberOfUnitsOnHand, Map<Thread,int[]> threadClaims ){
+		ArrayList<int[]> array = new ArrayList<int[]>();
+		
+		for(Thread t: threadClaims.keySet()){
+			array.add(threadClaims.get(t));
+		}
+		
+		for(int i = 0; i < threadClaims.size() - 1; i++){
+			if (array.get(i)[1] > numberOfUnitsOnHand){
+				return false;
+			}
+			numberOfUnitsOnHand += array.get(i)[0];
+		}
+		return true;
 	}
 	
 	public void release(int nUnits){
-		if( claim != Thread.currentThread() || nUnits <= 0 || nUnits > allocUnits){
+		if( !claims.containsKey(Thread.currentThread()) || nUnits <= 0 || nUnits > allocUnits){
 			System.exit(1);
 		}
 		System.out.println("Thread "+Thread.currentThread().getName()+" releases "+nUnits+" units.");
-		allocUnits -= nUnits;
+		availUnits += nUnits;
 		Thread.currentThread().notifyAll();
 	}
 	
