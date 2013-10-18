@@ -62,6 +62,7 @@ public class Banker {
 				if (safe(nUnits, claims)) {
 					System.out.println("Thread "+Thread.currentThread().getName()+" has "+nUnits+" units allocated.");
 					availUnits -= nUnits;
+					return true;
 				}
 			}
 		}
