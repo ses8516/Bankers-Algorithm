@@ -20,8 +20,9 @@ public class Banker {
 	* @param nUnits - # of units from the system the Banker wants to obtain initially
 	*/
 	public Banker(int nUnits){
+		// Map of thread => [allocation, remaining claim]
 		claims = new HashMap<Thread,int[]>();
-		allocUnits = nUnits;
+		allocUnits = 0;
 		availUnits = nUnits;
 	}
 	
@@ -44,10 +45,16 @@ public class Banker {
 	/**
 	* Attempt to claim more units.
 	*/
-	public boolean request(int nUnits){
+	public synchronized boolean request(int nUnits){
 		System.out.println("Thread "+Thread.currentThread().getName()+" requests "+nUnits+" units.");
 		
-		if (safe(nUnits, claims)){
+		if (safe()){
+			System.out.println("Thread "+Thread.currentThread().getName()+" has "+nUnits+" units allocated.");
+			availUnits -= nUnits;
+			allocUnits += nUnits;
+			claims.get(Thread.currentThread())[0] += nUnits;
+			claims.get(Thread.currentThread())[1] -= nUnits;
+			return true;
 			
 		}else{
 			while(true){
@@ -59,46 +66,48 @@ public class Banker {
 				}
 				System.out.println("Thread "+Thread.currentThread().getName()+" awakened.");
 				
-				if (safe(nUnits, claims)) {
+				if (safe()) {
 					System.out.println("Thread "+Thread.currentThread().getName()+" has "+nUnits+" units allocated.");
 					availUnits -= nUnits;
+					claims.get(Thread.currentThread())[0] += nUnits;
+					claims.get(Thread.currentThread())[1] -= nUnits;
 					return true;
 				}
 			}
 		}
-		
-		return false;
 	}
 	
 	/**
 	 * Determine if state is safe
 	 */
-	private boolean safe(int numberOfUnitsOnHand, Map<Thread,int[]> threadClaims ){
+	private boolean safe(){
 		ArrayList<int[]> array = new ArrayList<int[]>();
 		
-		for(Thread t: threadClaims.keySet()){
-			array.add(threadClaims.get(t));
+		int unitsOnHand = availUnits;
+		
+		for(Thread t: claims.keySet()){
+			array.add(claims.get(t));
 		}
 		sort(array);
-		for(int i = 0; i < threadClaims.size() - 1; i++){
-			if (array.get(i)[1] > numberOfUnitsOnHand){
+		for(int i = 0; i < claims.size(); i++){
+			if (array.get(i)[1] > unitsOnHand){
 				return false;
 			}
-			numberOfUnitsOnHand += array.get(i)[0];
+			unitsOnHand += array.get(i)[0];
 		}
 		return true;
 	}
 	
 	/**
 	 * @param, array, array of pairs of remaining and allocated units
-	 * Sorts the array by increasing claim size
-	 * /
-	public void sort(ArrayList<int[]> array){
+	 * Sorts the array by increasing remaining claim
+	 */
+	private void sort(ArrayList<int[]> array){
 		int temp[] = null;
 		
 		for(int i = 0; i < array.size(); i++){
 			for (int j = i + 1; j < array.size(); j++){
-				if (array.get(i)[0] > array.get(j)[0] ){
+				if (array.get(i)[1] > array.get(j)[1] ){
 					temp = array.get(i);
 					array.set(i, array.get(j));
 					array.set(j, temp);
@@ -114,6 +123,9 @@ public class Banker {
 		}
 		System.out.println("Thread "+Thread.currentThread().getName()+" releases "+nUnits+" units.");
 		availUnits += nUnits;
+		allocUnits -= nUnits;
+		claims.get(Thread.currentThread())[0] -= nUnits;
+		claims.get(Thread.currentThread())[1] += nUnits;
 		Thread.currentThread().notifyAll();
 	}
 	
