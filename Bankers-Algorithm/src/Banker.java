@@ -30,7 +30,7 @@ public class Banker {
 	* Attempt to claim more units from the system, if they are available.
 	* @param nUnits
 	*/
-	public void setClaim(int nUnits){
+	public synchronized void setClaim(int nUnits){
 		if(claims.containsKey(Thread.currentThread()) || nUnits <= 0 || nUnits > availUnits){
 			System.exit(1);
 		}
@@ -47,6 +47,10 @@ public class Banker {
 	*/
 	public synchronized boolean request(int nUnits){
 		System.out.println("Thread "+Thread.currentThread().getName()+" requests "+nUnits+" units.");
+		
+		if( !claims.containsKey(Thread.currentThread()) || nUnits <= 0 || nUnits > claims.get(Thread.currentThread())[1]){
+			System.exit(1);
+		}
 		
 		if (safe()){
 			System.out.println("Thread "+Thread.currentThread().getName()+" has "+nUnits+" units allocated.");
@@ -89,7 +93,7 @@ public class Banker {
 			array.add(claims.get(t));
 		}
 		sort(array);
-		for(int i = 0; i < claims.size(); i++){
+		for(int i = 0; i < claims.size() - 1; i++){
 			if (array.get(i)[1] > unitsOnHand){
 				return false;
 			}
@@ -117,8 +121,12 @@ public class Banker {
 		
 	}
 	
+	/**
+	 * The current thread releases nUnits units
+	 * @param nUnits
+	 */
 	public void release(int nUnits){
-		if( !claims.containsKey(Thread.currentThread()) || nUnits <= 0 || nUnits > allocUnits){
+		if( !claims.containsKey(Thread.currentThread()) || nUnits <= 0 || nUnits > claims.get(Thread.currentThread())[0]){
 			System.exit(1);
 		}
 		System.out.println("Thread "+Thread.currentThread().getName()+" releases "+nUnits+" units.");
